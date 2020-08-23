@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js physics - ammo.js AmmoPhysics</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<link type="text/css" rel="stylesheet" href="main.css">
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> physics - ammo.js AmmoPhysics
+		</div>
+
+		<script src="js/libs/ammo.wasm.js"></script>
+		<script type="module">
+
+			import * as THREE from '../build/three.module.js';
+			import { OrbitControls } from './jsm/controls/OrbitControls.js';
+			import { AmmoPhysics } from './jsm/physics/AmmoPhysics.js';
+			import Stats from './jsm/libs/stats.module.js';
+			import { TeapotBufferGeometry } from './jsm/geometries/TeapotBufferGeometry.js';
+			
+			var camera, scene, renderer, stats;
+			var physics;
+			var teapot;
+			var markers = [];
+			var bodies = [];
+			var meshes = [];
+			var quaternion = new THREE.Quaternion();
+			var matrix = new THREE.Matrix4();
+			var velocity = new THREE.Vector3();
+			var angular = new THREE.Vector3();
+			var lastTime = 0;
+
+
+			init();
+			async function init() {
+
+				//SCENE SETUP
+				//-----------------------------------------------------------------------------------------------
+				
+				physics = await AmmoPhysics();
+
+				camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 0.1, 50 );
+				camera.position.set( 0, 3, -3 );
+				camera.lookAt( 0, 0.5, 0 );
+				
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x5e5e5e );
+
+				var light = new THREE.HemisphereLight();
+				light.intensity = 0.35;
+				scene.add( light );
+
+				var light = new THREE.DirectionalLight();
+				light.position.set( 5, 5, 5 );
+				light.castShadow = true;
+				light.shadow.camera.zoom = 2;
+				scene.add( light );
+
+				//invisible walls
+				var rot = [0,90,180,-90], scale = 3;
+				var geometry = new THREE.PlaneBufferGeometry( scale, scale, 1 );
+				for ( var i = 0; i < 4; i++ ) {
+				var plane = new THREE.Mesh( geometry);
+				plane.rotateY(rot[i]*Math.PI/180);
+				plane.translateZ(-1*scale/2);
+				plane.visible = false;
+				physics.addMesh( plane, plane, 0, -1);
+				scene.add( plane );
+				}
+
+				//floor
+				var floor = new THREE.Mesh( new THREE.PlaneBufferGeometry( scale, scale, 1 ), new THREE.MeshPhongMaterial( { color: 0xafafaf } ));
+				floor.rotation.x = - Math.PI / 2;
+				floor.receiveShadow = true;
+				scene.add( floor );
+				physics.addMesh( floor, floor, 0, -2);
+				
+				//MESHES & BODIES
+				//-----------------------------------------------------------------------------------------------
+				var material = new THREE.MeshPhongMaterial( { color: 0x1f3a70 } );
+			
+				// Teapot with CompoundMesh
+				meshes[0] = new THREE.Mesh( new TeapotBufferGeometry( 5, 5 ), material );
+				meshes[0].scale.set(0.04,0.04,0.04);
+				
+				bodies[0] = new THREE.Group();
+				var tank = new THREE.Mesh( new THREE.CylinderBufferGeometry (0.25, 0.25, 0.4, 24 ));
+				var handle = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.7, 0.3, 0.1 ));
+				bodies[0].add(tank);
+				bodies[0].add(handle);
+				bodies[0].position.copy(meshes[0].position.set( -1, 0.5, 1 ));
+				
+				// instanced boxes
+				meshes[1] = new THREE.InstancedMesh( new THREE.BoxBufferGeometry( 0.2, 0.2, 0.2 ),
+				new THREE.MeshPhongMaterial( { color: 0x1f3a70 } ), 3 );
+				bodies[1] = meshes[1];
+				console.log(meshes[1]);
+				
+				meshes[1].userData.pos = [];	
+				for ( var i = 0; i < meshes[1].count; i ++ ) {
+				meshes[1].userData.pos[i] = new THREE.Vector3();
+				meshes[1].userData.pos[i].set( 1, 0.5, 0 );
+				}
+				
+				// sphere 
+				meshes[2] = new THREE.Mesh(new THREE.SphereBufferGeometry( 0.23, 24, 24 ), material );
+				bodies[2] = meshes[2];
+				bodies[2].position.copy(meshes[2].position.set( 1, 0.5, 1 ));
+				
+				// cylinder
+				meshes[3] = new THREE.Mesh(new THREE.CylinderBufferGeometry(0.2, 0.2, 0.4, 24 ), material );
+				bodies[3] = meshes[3];
+				bodies[3].position.copy(meshes[3].position.set( 0, 0.5, 0 ));
+				
+				// cone
+				meshes[4] = new THREE.Mesh(new THREE.ConeBufferGeometry(0.3, 0.5, 24 ), material );
+				bodies[4] = meshes[4];
+				bodies[4].position.copy(meshes[4].position.set( 1, 0.5, -1 ));
+				
+				// crosscube group with CompoundMesh
+				var meshX = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.7, 0.15, 0.15 ), material);
+				var meshY = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.15, 0.7, 0.15 ), material);
+				var meshZ = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.15, 0.15, 0.7 ), material);
+				
+				meshes[5] = new THREE.Group();
+				meshes[5].add(meshX);
+				meshes[5].add(meshY);
+				meshes[5].add(meshZ);
+				bodies[5] = meshes[5];
+				bodies[5].position.copy(meshes[5].position.set( -1, 0.5, 0 ));
+
+				//PHYSICS
+				//-----------------------------------------------------------------------------------------------
+				
+				for ( var i = 0; i < meshes.length; i++ ) {
+	
+					meshes[i].traverse( function ( child ) {
+
+						if (child.isMesh) {
+						//shadows
+						child.castShadow = true;
+						}
+
+					});
+
+					physics.addMesh( meshes[i], bodies[i], 1, i );
+
+					if ( meshes[i].isInstancedMesh ) {
+					
+						for ( var j = 0; j < meshes[i].count; j++ ){
+							physics.setMeshPosition( meshes[i], meshes[i].userData.pos[j], meshes[i].quaternion, j );
+						}
+						
+					} else {
+						physics.setMeshPosition( meshes[i], bodies[i].position, bodies[i].quaternion, 0);
+					}
+					meshes[i].lock = false;
+					scene.add( meshes[i] );
+				}
+				
+				//COLLISIONS MARKERS
+				//-----------------------------------------------------------------------------------------------				
+				var geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 1, 0 ) ] );
+	
+				for (var i = 0; i < meshes.length; i++) {
+					var line = new THREE.Line( geometry, new THREE.LineBasicMaterial( { color: 0xff0000 } ));
+					line.visible = false;
+					scene.add( line );
+					markers[i] = line;
+				}
+				
+				//RENDERER
+				//-----------------------------------------------------------------------------------------------				
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				renderer.shadowMap.enabled = true;
+				renderer.outputEncoding = THREE.sRGBEncoding;
+				document.body.appendChild( renderer.domElement );
+
+				stats = new Stats();
+				document.body.appendChild( stats.dom );
+
+				var controls = new OrbitControls( camera, renderer.domElement );
+				controls.target.y = 0.5;
+				controls.update();
+				
+				animate();
+			}
+			
+			function releaseCollisions(){
+				for (var i = 0; i < meshes.length; i++) {
+					markers[i].visible = false;
+					meshes[i].lock = false;
+				}
+			}
+			
+			function animate() {
+
+				requestAnimationFrame( animate );
+				renderer.render( scene, camera );
+				stats.update();
+				
+				var now = performance.now();
+				var timesince = now - lastTime;
+				
+				//velocity change every 2 seconds 
+				if (timesince > 3500) {
+					for ( var i = 0; i < meshes.length; i++ ) {
+						
+							velocity.set( Math.random() * 5-2.5, 3, Math.random() * 5-2.5 );
+							angular.set( Math.random() *6, Math.random() *6, Math.random() *6 );
+
+							if ( meshes[i].isInstancedMesh ) {
+								for ( var j = 0; j < meshes[i].count; j++ ){
+								physics.setMeshVelocity( meshes[i], velocity, angular, j );
+								}
+							} else { physics.setMeshVelocity( meshes[i], velocity, angular, 0 );}
+						}
+				}
+				//wait for object to be mid-air
+				if (timesince > 3600) {
+					releaseCollisions();
+					lastTime = performance.now();
+				}
+
+				physics.getCollisions(meshes, markers);
+			}
+		</script>
+	</body>
+</html>

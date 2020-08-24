@@ -37,7 +37,7 @@
 			init();
 			async function init() {
 
-				//SCENE SETUP
+				//Scene
 				//-----------------------------------------------------------------------------------------------
 				
 				physics = await AmmoPhysics();
@@ -72,13 +72,14 @@
 				}
 
 				//floor
-				var floor = new THREE.Mesh( new THREE.PlaneBufferGeometry( scale, scale, 1 ), new THREE.MeshPhongMaterial( { color: 0xafafaf } ));
+				var floor = new THREE.Mesh( new THREE.PlaneBufferGeometry( scale, scale, 1 ),
+				new THREE.MeshPhongMaterial( { color: 0xafafaf } ));
 				floor.rotation.x = - Math.PI / 2;
 				floor.receiveShadow = true;
 				scene.add( floor );
 				physics.addMesh( floor, floor, 0, -2);
 				
-				//MESHES & BODIES
+				//Meshes and bodies
 				//-----------------------------------------------------------------------------------------------
 				var material = new THREE.MeshPhongMaterial( { color: 0x1f3a70 } );
 			
@@ -88,7 +89,7 @@
 				
 				bodies[0] = new THREE.Group();
 				var tank = new THREE.Mesh( new THREE.CylinderBufferGeometry (0.25, 0.25, 0.4, 24 ));
-				var handle = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.7, 0.3, 0.1 ));
+				var handle = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.8, 0.3, 0.03 ));
 				bodies[0].add(tank);
 				bodies[0].add(handle);
 				bodies[0].position.copy(meshes[0].position.set( -1, 0.5, 1 ));
@@ -97,7 +98,6 @@
 				meshes[1] = new THREE.InstancedMesh( new THREE.BoxBufferGeometry( 0.2, 0.2, 0.2 ),
 				new THREE.MeshPhongMaterial( { color: 0x1f3a70 } ), 3 );
 				bodies[1] = meshes[1];
-				console.log(meshes[1]);
 				
 				meshes[1].userData.pos = [];	
 				for ( var i = 0; i < meshes[1].count; i ++ ) {
@@ -119,50 +119,43 @@
 				meshes[4] = new THREE.Mesh(new THREE.ConeBufferGeometry(0.3, 0.5, 24 ), material );
 				bodies[4] = meshes[4];
 				bodies[4].position.copy(meshes[4].position.set( 1, 0.5, -1 ));
-				
-				// crosscube group with CompoundMesh
-				var meshX = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.7, 0.15, 0.15 ), material);
-				var meshY = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.15, 0.7, 0.15 ), material);
-				var meshZ = new THREE.Mesh( new THREE.BoxBufferGeometry( 0.15, 0.15, 0.7 ), material);
-				
-				meshes[5] = new THREE.Group();
-				meshes[5].add(meshX);
-				meshes[5].add(meshY);
-				meshes[5].add(meshZ);
-				bodies[5] = meshes[5];
-				bodies[5].position.copy(meshes[5].position.set( -1, 0.5, 0 ));
 
-				//PHYSICS
+				//Physics
 				//-----------------------------------------------------------------------------------------------
 				
 				for ( var i = 0; i < meshes.length; i++ ) {
-	
-					meshes[i].traverse( function ( child ) {
 
+					//shadows
+					meshes[i].traverse( function ( child ) {
 						if (child.isMesh) {
-						//shadows
 						child.castShadow = true;
 						}
-
 					});
 
-					physics.addMesh( meshes[i], bodies[i], 1, i );
-
-					if ( meshes[i].isInstancedMesh ) {
+					physics.addMesh( meshes[i], bodies[i], 2, i );
 					
+					//instanced initial positions
+					if ( meshes[i].isInstancedMesh ) {
 						for ( var j = 0; j < meshes[i].count; j++ ){
 							physics.setMeshPosition( meshes[i], meshes[i].userData.pos[j], meshes[i].quaternion, j );
 						}
-						
+					//meshes initial positions
 					} else {
 						physics.setMeshPosition( meshes[i], bodies[i].position, bodies[i].quaternion, 0);
 					}
-					meshes[i].lock = false;
+					
+					//contact point flag
+					meshes[i].contact = false;
+					//contact index
+					meshes[i].index = i;
+					
 					scene.add( meshes[i] );
 				}
 				
-				//COLLISIONS MARKERS
+				//contact and collisions
 				//-----------------------------------------------------------------------------------------------				
+				
+				//markers
 				var geometry = new THREE.BufferGeometry().setFromPoints( [ new THREE.Vector3( 0, 0, 0 ), new THREE.Vector3( 0, 1, 0 ) ] );
 	
 				for (var i = 0; i < meshes.length; i++) {
@@ -172,7 +165,13 @@
 					markers[i] = line;
 				}
 				
-				//RENDERER
+				//single collision check : return collided object and contact point
+				physics.setupContact(markers);
+				
+				//single collision check : return contact point only
+				physics.setupContactPair(markers);
+				
+				//Renderer
 				//-----------------------------------------------------------------------------------------------				
 				renderer = new THREE.WebGLRenderer( { antialias: true } );
 				renderer.setPixelRatio( window.devicePixelRatio );
@@ -191,13 +190,6 @@
 				animate();
 			}
 			
-			function releaseCollisions(){
-				for (var i = 0; i < meshes.length; i++) {
-					markers[i].visible = false;
-					meshes[i].lock = false;
-				}
-			}
-			
 			function animate() {
 
 				requestAnimationFrame( animate );
@@ -208,10 +200,10 @@
 				var timesince = now - lastTime;
 				
 				//velocity change every 2 seconds 
-				if (timesince > 3500) {
+				if (timesince > 2000) {
 					for ( var i = 0; i < meshes.length; i++ ) {
 						
-							velocity.set( Math.random() * 5-2.5, 3, Math.random() * 5-2.5 );
+							velocity.set( Math.random() * 2-1, 4, Math.random() * 2-1 );
 							angular.set( Math.random() *6, Math.random() *6, Math.random() *6 );
 
 							if ( meshes[i].isInstancedMesh ) {
@@ -221,13 +213,24 @@
 							} else { physics.setMeshVelocity( meshes[i], velocity, angular, 0 );}
 						}
 				}
-				//wait for object to be mid-air
-				if (timesince > 3600) {
-					releaseCollisions();
+
+				if (timesince > 2100) {
+					//reset contact flags when object are mid-air
+					for (var i = 0; i < meshes.length; i++) {
+						markers[i].visible = false;
+						meshes[i].contact = false;
+					}
+					
 					lastTime = performance.now();
 				}
 
-				physics.getCollisions(meshes, markers);
+				//getCollisions is very slow : return all contacts
+				
+				//physics.getCollisions(meshes, markers);
+				
+				//physics.ContactPair(meshes[0], 0);
+				
+				physics.Contact(meshes[0], 0);
 			}
 		</script>
 	</body>

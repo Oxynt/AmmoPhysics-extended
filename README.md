@@ -1,4 +1,7 @@
 # AmmoPhysics-extended
+
+<a href="https://raw.githack.com/Oxynt/AmmoPhysics-extended/master/examples/physics_ammo_extended.html">DEMO</a>
+
 extended version of AmmoPhysics.js forked from three.js repository.\
 Some changes have been made to use it as general purpose helper.
 

@@ -302,7 +302,7 @@ async function AmmoPhysics() {
 				worldPos = contactPoint.get_m_positionWorldOnB();
 
 			}
-			console.log ("indexA:" +  objA.index + " indexB: " + indexB)
+
 			if (index == indexB ){
 			
 			let pos = {x: worldPos.x(), y: 0.1, z: worldPos.z()};

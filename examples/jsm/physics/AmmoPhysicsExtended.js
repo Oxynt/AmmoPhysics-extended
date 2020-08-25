@@ -268,9 +268,7 @@ async function AmmoPhysics() {
 		
 	let cbContactResult;
 	
-	let cbContactPairResult;
-	
-	function setupContact(markers){
+	function setupContact( bodyA, indexB, markers){
 
 		cbContactResult = new AmmoLib.ConcreteContactResultCallback();
 		
@@ -283,43 +281,39 @@ async function AmmoPhysics() {
 			if( distance > 0 ) return;
 
 			let colWrapper0 = Ammo.wrapPointer( colObj0Wrap, Ammo.btCollisionObjectWrapper );
-			let rb0 = Ammo.castObject( colWrapper0.getCollisionObject(), Ammo.btRigidBody );
+			let objA = Ammo.castObject( colWrapper0.getCollisionObject(), Ammo.btRigidBody );
 			
 			let colWrapper1 = Ammo.wrapPointer( colObj1Wrap, Ammo.btCollisionObjectWrapper );
-			let rb1 = Ammo.castObject( colWrapper1.getCollisionObject(), Ammo.btRigidBody );
-
-			let threeObject0 = rb0.index;
-			let threeObject1 = rb1.index;
+			let objB = Ammo.castObject( colWrapper1.getCollisionObject(), Ammo.btRigidBody );
 
 			let index, localPos, worldPos
 
-			if( threeObject0 != 0 ){
+			if( objA.index != bodyA.index ){
 
-				index = threeObject0;
+				index = objA.index;
 				localPos = contactPoint.get_m_localPointA();
 				worldPos = contactPoint.get_m_positionWorldOnA();
 
 			}
 			else{
 
-				index = threeObject1;
+				index = objB.index;
 				localPos = contactPoint.get_m_localPointB();
 				worldPos = contactPoint.get_m_positionWorldOnB();
 
 			}
-			
-			if (index == -2 ){
+			console.log ("indexA:" +  objA.index + " indexB: " + indexB)
+			if (index == indexB ){
 			
 			let pos = {x: worldPos.x(), y: 0.1, z: worldPos.z()};
 			markers[0].position.copy(pos);
 			markers[0].visible = true;
 
 			}
-			
-			
 		}
-
 	}
+	
+	let cbContactPairResult;
 	
 	function setupContactPair(markers){
 
@@ -340,28 +334,34 @@ async function AmmoPhysics() {
 			markers[0].position.copy(pos);
 			markers[0].visible = true;
 
-			}else {markers[0].visible = false;}
+			}
 		}
 
 	}
 
-	function Contact(mesh, index){
+	function getContact( meshA, indexB, markers){
+		
+		const bodyA = meshMap.get( meshA );
 
-		const bodies = meshMap.get( mesh );
-		const body = meshMap.get( mesh );
+		if ( ! cbContactResult ){
+			setupContact(bodyA, indexB, markers);
+		}
 
-		world.contactTest( body, cbContactResult );
+		world.contactTest( bodyA, cbContactResult );
 	}
 	
-	function ContactPair(mesh, index){
+	function getContactPair(mesh, markers){
 
-		const bodies = meshMap.get( mesh );
 		const body = meshMap.get( mesh );
+		
+		if ( ! cbContactPairResult ){
+			setupContactPair(markers);
+		}
 
 		world.contactTest( body, cbContactPairResult );
 	}
 	
-	function getCollisions(meshes, markers) {	
+	function getAllCollisions(meshes, markers) {	
 	
 		let dispatcher = world.getDispatcher();
         let numManifolds = dispatcher.getNumManifolds();
@@ -483,11 +483,9 @@ async function AmmoPhysics() {
 		addMesh: addMesh,
 		setMeshPosition: setMeshPosition,
 		setMeshVelocity: setMeshVelocity,
-		getCollisions: getCollisions,
-		Contact: Contact,
-		ContactPair: ContactPair,
-		setupContact: setupContact,
-		setupContactPair: setupContactPair
+		getAllCollisions: getAllCollisions,
+		getContact: getContact,
+		getContactPair: getContactPair
 	};
 }
 

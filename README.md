@@ -9,10 +9,10 @@ support more dynamic primitives\
 custom/loaded meshes can be used with primitives\
 create compound shapes when THREE.Group is used\
 three differents methods for contact points detection\
-auto convert undefined primitives to convex hull shapes\
+auto convert undefined primitives to convex hull shapes
 
 
-links and References:\
+links and References:
 
 <a href= "https://github.com/mrdoob/three.js/blob/dev/examples/physics_ammo_instancing.html">Original code by mrdoob</a>\
 <a href= "https://medium.com/@bluemagnificent/intro-to-javascript-3d-physics-using-ammo-js-and-three-js-dd48df81f591">Intro to JavaScript 3D Physics by Blue Magnificent</a>\

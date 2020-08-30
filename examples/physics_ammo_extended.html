@@ -83,7 +83,7 @@
 				//Meshes and bodies
 				//-----------------------------------------------------------------------------------------------
 				var material = new THREE.MeshPhongMaterial( { color: 0x1f3a70 } );
-			
+				
 				// Teapot with CompoundMesh
 				meshes[0] = new THREE.Mesh( new TeapotBufferGeometry( 5, 5 ), material );
 				meshes[0].scale.set(0.04,0.04,0.04);
@@ -120,6 +120,11 @@
 				meshes[4] = new THREE.Mesh(new THREE.ConeBufferGeometry(0.3, 0.5, 24 ), material );
 				bodies[4] = meshes[4];
 				bodies[4].position.copy(meshes[4].position.set( 1, 0.5, -1 ));
+				
+				// convex hull (conic cylinder)
+				meshes[5] = new THREE.Mesh(new THREE.CylinderBufferGeometry(0.2, 0.3, 0.3, 24 ), material );
+				bodies[5] = meshes[5];
+				bodies[5].position.copy(meshes[5].position.set( 0, 0.5, -1 ));
 
 				//Physics setup
 				//-----------------------------------------------------------------------------------------------

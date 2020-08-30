@@ -57,16 +57,16 @@ async function AmmoPhysics() {
 
 			return shape;
 		
-		} else if ( geometry.type === 'CylinderBufferGeometry' ) {
+		} else if ( geometry.type === 'CylinderBufferGeometry' && parameters.radiusTop === parameters.radiusBottom ) {
 
 			const st = parameters.radiusTop !== undefined ? parameters.radiusTop : 0.5;
 			const sy = parameters.height !== undefined ? parameters.height : 1;
 			
-			const shape = new AmmoLib.btCylinderShape(new Ammo.btVector3(st, sy* 0.5, st));
+			const shape = new AmmoLib.btCylinderShape(new AmmoLib.btVector3(st, sy* 0.5, st));
 			shape.setMargin( 0.05 );
 
 			return shape;
-			
+		
 		} else if ( geometry.type === 'ConeBufferGeometry' ) {
 
 			const sr = parameters.radius !== undefined ? parameters.radius : 1;
@@ -77,8 +77,52 @@ async function AmmoPhysics() {
 
 			return shape;
 		}
-		
-		return null;
+
+		//convex hull converter
+			
+		var verticesPos = geometry.getAttribute('position').array;
+			
+		let triangles = [];
+		for ( let i = 0; i < verticesPos.length; i += 3 ) {
+			triangles.push({ x:verticesPos[i], y:verticesPos[i+1], z:verticesPos[i+2] })
+		}
+			
+		let triangle, triangle_mesh = new Ammo.btTriangleMesh;
+			
+		const shape = new AmmoLib.btConvexHullShape();
+			
+		var vectA = new AmmoLib.btVector3(0,0,0);
+		var vectB = new AmmoLib.btVector3(0,0,0);
+		var vectC = new AmmoLib.btVector3(0,0,0);
+			
+		console.log(triangles.length);
+	
+		for ( let i = 0; i < triangles.length-3; i += 3 ) {
+				
+			console.log(i);
+				
+			vectA.setX(triangles[i].x);
+			vectA.setY(triangles[i].y);
+			vectA.setZ(triangles[i].z);
+			shape.addPoint(vectA,true);
+
+			vectB.setX(triangles[i+1].x);
+			vectB.setY(triangles[i+1].y);
+			vectB.setZ(triangles[i+1].z);
+			shape.addPoint(vectB,true);
+
+			vectC.setX(triangles[i+2].x);
+			vectC.setY(triangles[i+2].y);
+			vectC.setZ(triangles[i+2].z);
+			shape.addPoint(vectC,true);
+				
+			triangle_mesh.addTriangle( vectA, vectB, vectC, true );
+		}
+			
+		shape.setMargin( 0 );
+			
+		return shape;
+
 	}
 
 	const meshes = [];

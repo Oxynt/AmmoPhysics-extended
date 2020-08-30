@@ -12,10 +12,10 @@ three differents methods for contact points detection\
 auto convert undefined primitives to convex hull shapes
 
 
-links and References:
+LINKS AND REFERENCES:
 
 <a href= "https://github.com/mrdoob/three.js/blob/dev/examples/physics_ammo_instancing.html">Original code by mrdoob</a>
 
 <a href= "https://medium.com/@bluemagnificent/intro-to-javascript-3d-physics-using-ammo-js-and-three-js-dd48df81f591">Intro to JavaScript 3D Physics by Blue Magnificent</a>
 
-<a https://pybullet.org/Bullet/BulletFull/annotated.html>Bullet engine Class library</a>
+<a href= "https://pybullet.org/Bullet/BulletFull/annotated.html">Bullet engine Class library</a>

@@ -94,12 +94,8 @@ async function AmmoPhysics() {
 		var vectA = new AmmoLib.btVector3(0,0,0);
 		var vectB = new AmmoLib.btVector3(0,0,0);
 		var vectC = new AmmoLib.btVector3(0,0,0);
-			
-		console.log(triangles.length);
 	
 		for ( let i = 0; i < triangles.length-3; i += 3 ) {
-				
-			console.log(i);
 				
 			vectA.setX(triangles[i].x);
 			vectA.setY(triangles[i].y);

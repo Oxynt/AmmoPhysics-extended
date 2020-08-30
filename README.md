@@ -5,10 +5,14 @@
 extended version of AmmoPhysics.js forked from three.js repository.\
 Some changes have been made to use it as general purpose helper.
 
-support more dynamic primitives\
-custom/loaded meshes can be used with primitives\
-create compound shapes when THREE.Group is used\
-three differents methods for contact points detection\
+support more dynamic primitives
+
+custom/loaded meshes can be used with primitives
+
+create compound shapes when THREE.Group is used
+
+three differents methods for contact points detection
+
 auto convert undefined primitives to convex hull shapes
 
 

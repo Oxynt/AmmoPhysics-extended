@@ -7,6 +7,9 @@ async function AmmoPhysics() {
 
 	}
 
+	//-------------------------------------------------------------------
+	// Init ammo
+	//-------------------------------------------------------------------
 	const AmmoLib = await Ammo();
 
 	const frameRate = 60;
@@ -16,18 +19,16 @@ async function AmmoPhysics() {
 	const solver = new AmmoLib.btSequentialImpulseConstraintSolver();
 	const world = new AmmoLib.btDiscreteDynamicsWorld( dispatcher, broadphase, solver, collisionConfiguration );
 	world.setGravity( new AmmoLib.btVector3( 0, - 9.8, 0 ) );
-
 	const worldTransform = new AmmoLib.btTransform();
-
-	//
-
+	
+	//-------------------------------------------------------------------
+	// create ammo primitives from three geometry
+	//-------------------------------------------------------------------
 	function getShape( geometry ) {
 
 		const parameters = geometry.parameters;
 
-		// TODO change type to is*
-
-		if ( geometry.type === 'BoxBufferGeometry' ) {
+		if ( geometry.type === 'BoxGeometry' ) {
 
 			const sx = parameters.width !== undefined ? parameters.width / 2 : 0.5;
 			const sy = parameters.height !== undefined ? parameters.height / 2 : 0.5;
@@ -38,7 +39,7 @@ async function AmmoPhysics() {
 
 			return shape;
 
-		} else if ( geometry.type === 'PlaneBufferGeometry' ) {
+		} else if ( geometry.type === 'PlaneGeometry' ) {
 
 			const sx = parameters.width !== undefined ? parameters.width / 2 : 0.5;
 			const sy = parameters.height !== undefined ? parameters.height / 2 : 0.5;
@@ -48,7 +49,7 @@ async function AmmoPhysics() {
 
 			return shape;
 
-		} else if ( geometry.type === 'SphereBufferGeometry' ) {
+		} else if ( geometry.type === 'SphereGeometry' ) {
 
 			const sr = parameters.radius !== undefined ? parameters.radius : 1;
 
@@ -57,7 +58,7 @@ async function AmmoPhysics() {
 
 			return shape;
 		
-		} else if ( geometry.type === 'CylinderBufferGeometry' && parameters.radiusTop === parameters.radiusBottom ) {
+		} else if ( geometry.type === 'CylinderGeometry' && parameters.radiusTop === parameters.radiusBottom ) {
 
 			const st = parameters.radiusTop !== undefined ? parameters.radiusTop : 0.5;
 			const sy = parameters.height !== undefined ? parameters.height : 1;
@@ -67,7 +68,7 @@ async function AmmoPhysics() {
 
 			return shape;
 		
-		} else if ( geometry.type === 'ConeBufferGeometry' ) {
+		} else if ( geometry.type === 'ConeGeometry' ) {
 
 			const sr = parameters.radius !== undefined ? parameters.radius : 1;
 			const sy = parameters.height !== undefined ? parameters.height : 1;
@@ -76,72 +77,82 @@ async function AmmoPhysics() {
 			shape.setMargin( 0 );
 
 			return shape;
-		}
+		} else {
 
-		//convex hull converter
-			
-		var verticesPos = geometry.getAttribute('position').array;
-			
-		let triangles = [];
-		for ( let i = 0; i < verticesPos.length; i += 3 ) {
-			triangles.push({ x:verticesPos[i], y:verticesPos[i+1], z:verticesPos[i+2] })
-		}
-			
-		let triangle, triangle_mesh = new Ammo.btTriangleMesh;
-			
-		const shape = new AmmoLib.btConvexHullShape();
-			
-		var vectA = new AmmoLib.btVector3(0,0,0);
-		var vectB = new AmmoLib.btVector3(0,0,0);
-		var vectC = new AmmoLib.btVector3(0,0,0);
-	
-		for ( let i = 0; i < triangles.length-3; i += 3 ) {
-				
-			vectA.setX(triangles[i].x);
-			vectA.setY(triangles[i].y);
-			vectA.setZ(triangles[i].z);
-			shape.addPoint(vectA,true);
+//convex hull converter
 
-			vectB.setX(triangles[i+1].x);
-			vectB.setY(triangles[i+1].y);
-			vectB.setZ(triangles[i+1].z);
-			shape.addPoint(vectB,true);
+// new ammo shape
+const shape = new AmmoLib.btConvexHullShape();
 
-			vectC.setX(triangles[i+2].x);
-			vectC.setY(triangles[i+2].y);
-			vectC.setZ(triangles[i+2].z);
-			shape.addPoint(vectC,true);
-				
-			triangle_mesh.addTriangle( vectA, vectB, vectC, true );
-		}
+//new ammo triangles
+let triangle, triangle_mesh = new Ammo.btTriangleMesh;
+
+//declare triangles position vectors
+let vectA = new AmmoLib.btVector3(0,0,0);
+let vectB = new AmmoLib.btVector3(0,0,0);
+let vectC = new AmmoLib.btVector3(0,0,0);
+
+//retrieve vertices positions from object
+let verticesPos = geometry.getAttribute('position').array;
+let triangles = [];
+for ( let i = 0; i < verticesPos.length; i += 3 ) {
+	triangles.push({ x:verticesPos[i], y:verticesPos[i+1], z:verticesPos[i+2] })
+}
+
+//use triangles data to draw ammo shape
+for ( let i = 0; i < triangles.length-3; i += 3 ) {
+		
+	vectA.setX(triangles[i].x);
+	vectA.setY(triangles[i].y);
+	vectA.setZ(triangles[i].z);
+	shape.addPoint(vectA,true);
+
+	vectB.setX(triangles[i+1].x);
+	vectB.setY(triangles[i+1].y);
+	vectB.setZ(triangles[i+1].z);
+	shape.addPoint(vectB,true);
+
+	vectC.setX(triangles[i+2].x);
+	vectC.setY(triangles[i+2].y);
+	vectC.setZ(triangles[i+2].z);
+	shape.addPoint(vectC,true);
+		
+	triangle_mesh.addTriangle( vectA, vectB, vectC, true );
+}
 			
 		shape.setMargin( 0 );
 			
 		return shape;
+		}
 
 	}
 
 	const meshes = [];
 	const meshMap = new WeakMap();
+	
+	
+	//-------------------------------------------------------------------
+	//THREE to Ammo parsing function
+	//-------------------------------------------------------------------
+	function addMesh( mesh, body, mass ) {
 
-	function addMesh( mesh, body, mass, index) {
-		
 		let shape;
-		if ( body.isGroup ) {
+		
+		if ( body.isGroup ) { //convert THREE.goup to Compound Shape
 			shape = getCompoundShape( body );
-		} else {
+		} else { //convert THREE.geometry to Shape
 			shape = getShape( body.geometry );
 		}
 		
 		if ( shape !== null ) {
 
-			if ( mesh.isInstancedMesh ) {
+			if ( mesh.isInstancedMesh ) { 
 
-				handleInstancedMesh( mesh, mass, shape, index );
+				handleInstancedMesh( mesh, mass, shape );
 
 			} else {
 
-				handleMesh( mesh, mass, shape, index );
+				handleMesh( mesh, mass, shape );
 
 			}
 		}
@@ -174,7 +185,10 @@ async function AmmoPhysics() {
 		return compShape;
 	}
 
-	function handleMesh( mesh, mass, shape, index ) {
+	//-------------------------------------------------------------------
+	//Init mesh shapes
+	//-------------------------------------------------------------------
+	function handleMesh( mesh, mass, shape) {
 
 		const position = mesh.position;
 		const quaternion = mesh.quaternion;
@@ -190,18 +204,15 @@ async function AmmoPhysics() {
 
 		const body = new AmmoLib.btRigidBody( rbInfo );
 		
-		body.index = index;
+		body.index = mesh.index;
 		body.setSleepingThresholds(0.0, 0.1);
 		//body.setFriction( 4 );
 
 		world.addRigidBody( body );
 
-		if ( mass > 0 ) {
+		meshes.push( mesh );
+		meshMap.set( mesh, body );
 
-			meshes.push( mesh );
-			meshMap.set( mesh, body );
-
-		}
 	}
 	
 	function meshTransform( position, quaternion ) {
@@ -213,8 +224,11 @@ async function AmmoPhysics() {
 		
 		return transform;
 	}
-
-	function handleInstancedMesh( mesh, mass, shape, index ) {
+	
+	//-------------------------------------------------------------------
+	//Init Instanced mesh shapes
+	//-------------------------------------------------------------------
+	function handleInstancedMesh( mesh, mass, shape ) {
 
 		const array = mesh.instanceMatrix.array;
 
@@ -235,8 +249,6 @@ async function AmmoPhysics() {
 			const rbInfo = new AmmoLib.btRigidBodyConstructionInfo( mass, motionState, shape, localInertia );
 
 			const body = new AmmoLib.btRigidBody( rbInfo );
-			
-			body.index = index;
 
 			world.addRigidBody( body );
 
@@ -244,40 +256,15 @@ async function AmmoPhysics() {
 
 		}
 
-		if ( mass > 0 ) {
-
 			mesh.instanceMatrix.setUsage( 35048 ); // THREE.DynamicDrawUsage = 35048
 			meshes.push( mesh );
 
 			meshMap.set( mesh, bodies );
-
-		}
-	}
-
-	function setMeshVelocity( mesh, velocity, angular, index ) {
-
-		if ( mesh.isInstancedMesh ) {
-
-			const bodies = meshMap.get( mesh );
-			
-			const body = bodies[ index ];
-			
-			body.setAngularVelocity( new AmmoLib.btVector3( angular.x, angular.y, angular.z ) );
-
-			body.setLinearVelocity( new AmmoLib.btVector3( velocity.x, velocity.y, velocity.z ) );
-
-		} else {
-
-			const body = meshMap.get( mesh );
-			
-			body.setAngularVelocity( new AmmoLib.btVector3( angular.x, angular.y, angular.z) );
-
-			body.setLinearVelocity( new AmmoLib.btVector3( velocity.x, velocity.y, velocity.z ) );
-
-		}
-
 	}
 	
+	//-------------------------------------------------------------------
+	//set new position on the fly
+	//-------------------------------------------------------------------
 	function setMeshPosition( mesh, position, quaternion, index ) {
 
 		if ( mesh.isInstancedMesh ) {
@@ -302,13 +289,42 @@ async function AmmoPhysics() {
 			body.setWorldTransform( worldTransform );
 
 		}
+	}	
+
+	//-------------------------------------------------------------------
+	//set new velocity and rotational velocity
+	//-------------------------------------------------------------------
+	function setMeshVelocity( mesh, velocity, angular, index ) {
+
+		if ( mesh.isInstancedMesh ) {
+
+			const bodies = meshMap.get( mesh );
+			
+			const body = bodies[ index ];
+			
+			body.setAngularVelocity( new AmmoLib.btVector3( angular.x, angular.y, angular.z ) );
+
+			body.setLinearVelocity( new AmmoLib.btVector3( velocity.x, velocity.y, velocity.z ) );
+
+		} else {
+
+			const body = meshMap.get( mesh );
+			
+			body.setAngularVelocity( new AmmoLib.btVector3( angular.x, angular.y, angular.z) );
+
+			body.setLinearVelocity( new AmmoLib.btVector3( velocity.x, velocity.y, velocity.z ) );
+
+		}
+
 	}
 	
-	//
-		
+	//-------------------------------------------------------------------
+	//Init contacts
+	//-------------------------------------------------------------------
+	
 	let cbContactResult;
 	
-	function setupContact( bodyA, indexB, markers){
+	function setupContact( bodyA, indexB, contact){
 
 		cbContactResult = new AmmoLib.ConcreteContactResultCallback();
 		
@@ -329,33 +345,30 @@ async function AmmoPhysics() {
 			let index, localPos, worldPos
 
 			if( objA.index != bodyA.index ){
-
+				
 				index = objA.index;
-				localPos = contactPoint.get_m_localPointA();
+			//	localPos = contactPoint.get_m_localPointA();
 				worldPos = contactPoint.get_m_positionWorldOnA();
 
 			}
 			else{
 
 				index = objB.index;
-				localPos = contactPoint.get_m_localPointB();
+			//	localPos = contactPoint.get_m_localPointB();
 				worldPos = contactPoint.get_m_positionWorldOnB();
 
 			}
 
 			if (index == indexB ){
-			
-			let pos = {x: worldPos.x(), y: 0.1, z: worldPos.z()};
-			markers[0].position.copy(pos);
-			markers[0].visible = true;
-
+			let pos = {x: worldPos.x(), y: worldPos.y(), z: worldPos.z()};
+			contact.copy(pos);
 			}
 		}
 	}
 	
 	let cbContactPairResult;
 	
-	function setupContactPair(markers){
+	function setupContactPair(contact){
 
 		cbContactPairResult = new AmmoLib.ConcreteContactResultCallback();
 		
@@ -370,38 +383,47 @@ async function AmmoPhysics() {
 			if( distance > 0 ) {
 
 			let worldPos = contactPoint.get_m_positionWorldOnA();
-			let pos = {x: worldPos.x(), y: 0, z: worldPos.z()};
-			markers[0].position.copy(pos);
-			markers[0].visible = true;
-
-			}
+			let pos = {x: worldPos.x(), y: worldPos.y(), z: worldPos.z()};
+			contact.copy(pos);
+			contact.c = 1;
+			} else { contact.c = 0; }
 		}
 
 	}
 
-	function getContact( meshA, indexB, markers){
+	//-------------------------------------------------------------------
+	//contacts functions
+	//-------------------------------------------------------------------
+
+	//contact between two meshes
+	function getContact( meshA, meshB, contact){
 		
 		const bodyA = meshMap.get( meshA );
+		let indexB = meshB.index;
 
 		if ( ! cbContactResult ){
-			setupContact(bodyA, indexB, markers);
+			setupContact(bodyA, indexB, contact);
 		}
 
 		world.contactTest( bodyA, cbContactResult );
 	}
 	
-	function getContactPair(mesh, markers){
+	//all contacts on target mesh
+	function getContactPair(index, contact){
 
-		const body = meshMap.get( mesh );
+		const body = meshMap.get( index );
 		
+		//init
 		if ( ! cbContactPairResult ){
-			setupContactPair(markers);
+			setupContactPair(contact);
 		}
 
 		world.contactTest( body, cbContactPairResult );
 	}
 	
-	function getAllCollisions(meshes, markers) {	
+	function getAllCollisions(mesh, markers) {
+		
+		let meshIndex = mesh.index;
 	
 		let dispatcher = world.getDispatcher();
         let numManifolds = dispatcher.getNumManifolds();
@@ -428,22 +450,31 @@ async function AmmoPhysics() {
 					//	worldPos : contactPoint.get_m_positionWorldOnA()
 					//	localPos : contactPoint.get_m_localPointA()
 					
-					if (objA.index > -1 && objB.index < -1 && meshes[objA.index].contact == false){
-						
-						let worldPos = contactPoint.get_m_positionWorldOnA();
-						let pos = {x: worldPos.x(), y: 0, z: worldPos.z()};
+					//only display contact from other meshes
+					
+					let index, worldPos;
+					
+					if( objA.index != meshIndex ){
+				
+						index = objA.index;
+						worldPos = contactPoint.get_m_positionWorldOnA();
+					
+					if (objB.index != meshIndex){
+						index = 'fail'; //no contact with target
+					}
+
+					} else if( objB.index != meshIndex ){
+				
+						index = objB.index;
+						worldPos = contactPoint.get_m_positionWorldOnB();
+					}				
+					
+
+					if (markers[index]){
+
+						let pos = {x: worldPos.x(), y: worldPos.y(), z: worldPos.z()};
 						markers[objA.index].position.copy(pos);
 						markers[objA.index].visible = true;
-						meshes[objA.index].contact = true;
-					}
-					
-					if (objB.index > -1 && objA.index < -1 && meshes[objB.index].contact == false){
-						
-						let worldPos = contactPoint.get_m_positionWorldOnB();
-						let pos = {x: worldPos.x(), y: 0, z: worldPos.z()};
-						markers[objB.index].position.copy(pos);
-						markers[objB.index].visible = true;
-						meshes[objB.index].contact = true;
 					}
 					
 				}
@@ -482,38 +513,43 @@ async function AmmoPhysics() {
 				const array = mesh.instanceMatrix.array;
 				const bodies = meshMap.get( mesh );
 
+
 				for ( let j = 0; j < bodies.length; j ++ ) {
 
-					const body = bodies[ j ];
+					if (bodies[j].isActive()){
 
-					const motionState = body.getMotionState();
-					motionState.getWorldTransform( worldTransform );
+						const body = bodies[ j ];
 
-					const position = worldTransform.getOrigin();
-					const quaternion = worldTransform.getRotation();
+						const motionState = body.getMotionState();
+						motionState.getWorldTransform( worldTransform );
+	
+						const position = worldTransform.getOrigin();
+						const quaternion = worldTransform.getRotation();
 
-					compose( position, quaternion, array, j * 16 );
+						compose( position, quaternion, array, j * 16 );
 
+						mesh.instanceMatrix.needsUpdate = true;
+
+					}
 				}
-
-				mesh.instanceMatrix.needsUpdate = true;
-
+				
 			} else {
 
 				const body = meshMap.get( mesh );
 
+				if (body.isActive()){
+
 				const motionState = body.getMotionState();
 				motionState.getWorldTransform( worldTransform );
-
+				
 				const position = worldTransform.getOrigin();
 				const quaternion = worldTransform.getRotation();
 				mesh.position.set( position.x(), position.y(), position.z() );
 				mesh.quaternion.set( quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w() );
-
+				
+				}
 			}
-
 		}
-
 	}
 
 	// animate

@@ -6,6 +6,7 @@ Some changes have been made to use it as general purpose helper.
 <a href="https://raw.githack.com/Oxynt/AmmoPhysics-extended/master/">DEMO</a>
 
 -support more dynamic primitives\
+-support positioning, velocity, rotational velocity\
 -custom/loaded meshes can be used with primitives\
 -create compound shapes when THREE.Group is used\
 -three differents methods for contact points detection\

@@ -12,15 +12,23 @@ async function AmmoPhysics() {
     //-------------------------------------------------------------------
     const AmmoLib = await Ammo();
 
+	
+	//common function
+	const transform = new AmmoLib.btTransform();
+	
+	const vectGravity = new AmmoLib.btVector3(0, -9.8, 0);
+	const vectVelocity = new AmmoLib.btVector3();
+	const vectAngular = new AmmoLib.btVector3();
+
     const frameRate = 60;
     const collisionConfiguration = new AmmoLib.btDefaultCollisionConfiguration();
     const dispatcher = new AmmoLib.btCollisionDispatcher(collisionConfiguration);
     const broadphase = new AmmoLib.btDbvtBroadphase();
     const solver = new AmmoLib.btSequentialImpulseConstraintSolver();
     const world = new AmmoLib.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
-    world.setGravity(new AmmoLib.btVector3(0, -9.8, 0));
-    const worldTransform = new AmmoLib.btTransform();
-
+	
+	world.setGravity(vectGravity);
+	
     //-------------------------------------------------------------------
     // create ammo primitives from three geometry
     //-------------------------------------------------------------------
@@ -77,11 +85,9 @@ async function AmmoPhysics() {
             shape.setMargin(0);
 
             return shape;
-        } else {
-
-            //convex hull converter
-
-            // new ammo shape
+			
+		} else if (geometry.name === 'hull') {
+			
             const shape = new AmmoLib.btConvexHullShape();
 
             //new ammo triangles
@@ -123,11 +129,67 @@ async function AmmoPhysics() {
 
                 triangle_mesh.addTriangle(vectA, vectB, vectC, true);
             }
+			
+			AmmoLib.destroy(vectA);
+            AmmoLib.destroy(vectB);
+            AmmoLib.destroy(vectC);
 
             shape.setMargin(0);
 
-            return shape;
-        }
+            return shape
+			
+		} else if (geometry.name === 'triangle') {
+		
+            //new ammo triangles
+            let triangle, triangle_mesh = new AmmoLib.btTriangleMesh();
+
+            //declare triangles position vectors
+            let vectA = new AmmoLib.btVector3(0, 0, 0);
+            let vectB = new AmmoLib.btVector3(0, 0, 0);
+            let vectC = new AmmoLib.btVector3(0, 0, 0);
+
+            //retrieve vertices positions from object
+            let verticesPos = geometry.getAttribute('position').array;
+            let triangles = [];
+            for (let i = 0; i < verticesPos.length; i += 3) {
+                triangles.push({
+                    x: verticesPos[i],
+                    y: verticesPos[i + 1],
+                    z: verticesPos[i + 2]
+                })
+            }
+
+            //use triangles data to draw ammo shape
+            for (let i = 0; i < triangles.length - 3; i += 3) {
+
+                vectA.setX(triangles[i].x);
+                vectA.setY(triangles[i].y);
+                vectA.setZ(triangles[i].z);
+
+                vectB.setX(triangles[i + 1].x);
+                vectB.setY(triangles[i + 1].y);
+                vectB.setZ(triangles[i + 1].z);
+
+                vectC.setX(triangles[i + 2].x);
+                vectC.setY(triangles[i + 2].y);
+                vectC.setZ(triangles[i + 2].z);
+
+                triangle_mesh.addTriangle(vectA, vectB, vectC, true);
+            }
+			
+			AmmoLib.destroy(vectA);
+            AmmoLib.destroy(vectB);
+            AmmoLib.destroy(vectC);
+
+			//var shape = new AmmoLib.btBvhTriangleMeshShape(triangle_mesh, true);
+			
+			var shape = new Ammo.btConvexTriangleMeshShape( triangle_mesh, true);
+			
+			shape.setMargin(0);
+			
+			return shape
+
+		}
 
     }
 
@@ -267,7 +329,7 @@ async function AmmoPhysics() {
     }
 
     //-------------------------------------------------------------------
-    //set new position on the fly
+    //set new position
     //-------------------------------------------------------------------
     function setMeshPosition(mesh, position, quaternion, index) {
 
@@ -276,21 +338,21 @@ async function AmmoPhysics() {
             const bodies = meshMap.get(mesh);
             const body = bodies[index];
 
-            worldTransform.setIdentity();
-            worldTransform.setOrigin(new AmmoLib.btVector3(position.x, position.y, position.z));
+            transform.setIdentity();
+            transform.setOrigin(new AmmoLib.btVector3(position.x, position.y, position.z));
 
-            worldTransform.setRotation(new AmmoLib.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-            body.setWorldTransform(worldTransform);
+            transform.setRotation(new AmmoLib.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+            body.setWorldTransform(transform);
 
         } else {
 
             const body = meshMap.get(mesh);
 
-            worldTransform.setIdentity();
-            worldTransform.setOrigin(new AmmoLib.btVector3(position.x, position.y, position.z));
+            transform.setIdentity();
+            transform.setOrigin(new AmmoLib.btVector3(position.x, position.y, position.z));
 
-            worldTransform.setRotation(new AmmoLib.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-            body.setWorldTransform(worldTransform);
+            transform.setRotation(new AmmoLib.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+            body.setWorldTransform(transform);
 
         }
     }
@@ -299,25 +361,32 @@ async function AmmoPhysics() {
     //set new velocity and rotational velocity
     //-------------------------------------------------------------------
     function setMeshVelocity(mesh, velocity, angular, index) {
+		
 
         if (mesh.isInstancedMesh) {
 
             const bodies = meshMap.get(mesh);
-
             const body = bodies[index];
+			
+			body.activate();
 
-            body.setAngularVelocity(new AmmoLib.btVector3(angular.x, angular.y, angular.z));
+			vectAngular.setValue(angular.x, angular.y, angular.z);
+            body.setAngularVelocity(vectAngular);
 
-            body.setLinearVelocity(new AmmoLib.btVector3(velocity.x, velocity.y, velocity.z));
+			vectVelocity.setValue(velocity.x, velocity.y, velocity.z);
+            body.setLinearVelocity(vectVelocity);
 
         } else {
 
             const body = meshMap.get(mesh);
+            
+			vectAngular.setValue(angular.x, angular.y, angular.z);
+            body.setAngularVelocity(vectAngular);
 
-            body.setAngularVelocity(new AmmoLib.btVector3(angular.x, angular.y, angular.z));
+			vectVelocity.setValue(velocity.x, velocity.y, velocity.z);
+            body.setLinearVelocity(vectVelocity);
 
-            body.setLinearVelocity(new AmmoLib.btVector3(velocity.x, velocity.y, velocity.z));
-
+			body.activate();
         }
 
     }
@@ -538,10 +607,10 @@ async function AmmoPhysics() {
                         const body = bodies[j];
 
                         const motionState = body.getMotionState();
-                        motionState.getWorldTransform(worldTransform);
+                        motionState.getWorldTransform(transform);
 
-                        const position = worldTransform.getOrigin();
-                        const quaternion = worldTransform.getRotation();
+                        const position = transform.getOrigin();
+                        const quaternion = transform.getRotation();
 
                         compose(position, quaternion, array, j * 16);
 
@@ -557,10 +626,10 @@ async function AmmoPhysics() {
                 if (body.isActive()) {
 
                     const motionState = body.getMotionState();
-                    motionState.getWorldTransform(worldTransform);
+                    motionState.getWorldTransform(transform);
 
-                    const position = worldTransform.getOrigin();
-                    const quaternion = worldTransform.getRotation();
+                    const position = transform.getOrigin();
+                    const quaternion = transform.getRotation();
                     mesh.position.set(position.x(), position.y(), position.z());
                     mesh.quaternion.set(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
 

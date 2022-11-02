@@ -86,7 +86,6 @@ async function init() {
 	//4 floor
 	i++
 	meshes[i] = new THREE.Mesh(new THREE.PlaneGeometry(scale, scale, 1), new THREE.MeshPhongMaterial({ color: 0xafafaf }));
-	meshes[i].geometry.heightData = [];
 	meshes[i].rotation.x = -Math.PI / 2;
 	meshes[i].receiveShadow = true;
 	meshes[i].mass = 0;

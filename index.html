@@ -138,7 +138,7 @@ async function init() {
 	
 	//10 Convex hull shape (controled by central force)
 	i++
-	meshes[i] = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.3, 5), new THREE.MeshPhongMaterial({ color: 0xff0000 }));
+	meshes[i] = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.3, 5), new THREE.MeshPhongMaterial({ color: 0xff0000, flatShading: true }));
 	meshes[i].geometry.name = 'hull';
 	meshes[i].position.set(0, 0.5, -1);
 	meshes[i].mass = 2;

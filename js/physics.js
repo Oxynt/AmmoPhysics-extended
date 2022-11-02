@@ -21,12 +21,12 @@ async function AmmoPhysics() {
 	const vectAngular = new AmmoLib.btVector3();
 	const vectForce = new AmmoLib.btVector3();
 
-    const frameRate = 60;
-    const collisionConfiguration = new AmmoLib.btDefaultCollisionConfiguration();
-    const dispatcher = new AmmoLib.btCollisionDispatcher(collisionConfiguration);
-    const broadphase = new AmmoLib.btDbvtBroadphase();
-    const solver = new AmmoLib.btSequentialImpulseConstraintSolver();
-    const world = new AmmoLib.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
+	const frameRate = 60;
+	const collisionConfiguration = new AmmoLib.btDefaultCollisionConfiguration();
+	const dispatcher = new AmmoLib.btCollisionDispatcher(collisionConfiguration);
+	const broadphase = new AmmoLib.btDbvtBroadphase();
+	const solver = new AmmoLib.btSequentialImpulseConstraintSolver();
+	const world = new AmmoLib.btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfiguration);
 	
 	world.setGravity(vectGravity);
 	

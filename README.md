@@ -10,7 +10,7 @@ Some changes have been made to use it as general purpose helper.
 -custom/loaded meshes can be used with primitives\
 -create compound shapes when THREE.Group is used\
 -three differents contact points detection\
--convex hull shapes conversion
+-convex hull shapes conversion\
 -central force demo added
 
 <br>

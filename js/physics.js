@@ -410,33 +410,32 @@ async function AmmoPhysics() {
     function setMeshVelocity(mesh, velocity, angular, index) {
 		
 
-        if (mesh.isInstancedMesh) {
-
-            const bodies = meshMap.get(mesh);
-            const body = bodies[index];
+		if (mesh.isInstancedMesh) {
+			
+			const bodies = meshMap.get(mesh);
+			const body = bodies[index];
 			
 			body.activate();
-
+			
 			vectAngular.setValue(angular.x, angular.y, angular.z);
-            body.setAngularVelocity(vectAngular);
-
+			body.setAngularVelocity(vectAngular);
+			
 			vectVelocity.setValue(velocity.x, velocity.y, velocity.z);
-            body.setLinearVelocity(vectVelocity);
-
-        } else {
-
-            const body = meshMap.get(mesh);
-            
+			body.setLinearVelocity(vectVelocity);
+		
+		} else {
+		
+			const body = meshMap.get(mesh);
+			
 			vectAngular.setValue(angular.x, angular.y, angular.z);
-            body.setAngularVelocity(vectAngular);
-
+			body.setAngularVelocity(vectAngular);
+			
 			vectVelocity.setValue(velocity.x, velocity.y, velocity.z);
-            body.setLinearVelocity(vectVelocity);
-
+			body.setLinearVelocity(vectVelocity);
+			
 			body.activate();
-        }
-
-    }
+		}
+	}
 	
 	//-------------------------------------------------------------------
 	// set force
@@ -702,15 +701,15 @@ async function AmmoPhysics() {
     // animate
     setInterval(step, 1000 / frameRate);
 
-    return {
-        addMesh: addMesh,
-        setMeshPosition: setMeshPosition,
-        setMeshVelocity: setMeshVelocity,
+	return {
+		addMesh: addMesh,
+		setMeshPosition: setMeshPosition,
+		setMeshVelocity: setMeshVelocity,
 		setForce: setForce,
-        getAllCollisions: getAllCollisions,
-        getContact: getContact,
-        getContactPair: getContactPair
-    };
+		getAllCollisions: getAllCollisions,
+		getContact: getContact,
+		getContactPair: getContactPair
+	};
 }
 
 function compose(position, quaternion, array, index) {

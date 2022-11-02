@@ -19,7 +19,7 @@ async function AmmoPhysics() {
 	const vectGravity = new AmmoLib.btVector3(0, -9.8, 0);
 	const vectVelocity = new AmmoLib.btVector3();
 	const vectAngular = new AmmoLib.btVector3();
-	const vectForce = new AmmoLib.btVector3(0,0,0);
+	const vectForce = new AmmoLib.btVector3();
 
     const frameRate = 60;
     const collisionConfiguration = new AmmoLib.btDefaultCollisionConfiguration();

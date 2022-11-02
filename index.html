@@ -31,7 +31,6 @@ let physics;
 const markers = [];
 const bodies = [];
 const meshes = [];
-let tempBody;
 const keyStates = {};
 const force = new THREE.Vector3();
 const velocity = new THREE.Vector3();
@@ -79,20 +78,19 @@ async function init() {
 		meshes[j].translateZ(-1 * scale / 2);
 		meshes[j].visible = false;
 		meshes[j].mass = 0;
-		tempBody = bodies.push(meshes[j]);
+		bodies.push(meshes[j]);
 	}
 	
 	let i = 3; //index count
 
-	//4 terrain
+	//4 floor
 	i++
 	meshes[i] = new THREE.Mesh(new THREE.PlaneGeometry(scale, scale, 1), new THREE.MeshPhongMaterial({ color: 0xafafaf }));
-	meshes[i].geometry.name = "terrain";
 	meshes[i].geometry.heightData = [];
 	meshes[i].rotation.x = -Math.PI / 2;
 	meshes[i].receiveShadow = true;
 	meshes[i].mass = 0;
-	tempBody = bodies.push(meshes[i]);
+	bodies.push(meshes[i]);
 	
 	//5 Teapot using a Compound Shape body
 	i++
@@ -100,7 +98,7 @@ async function init() {
 	meshes[i].position.set(-1, 0.5, 1);
 	meshes[i].scale.set(0.04, 0.04, 0.04);
 	meshes[i].mass = 2;
-	tempBody = bodies.push(new THREE.Group());
+	bodies.push(new THREE.Group());
 	const tank = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.25, 0.4, 24));
 	const handle = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.3, 0.03));
 	bodies[i].add(tank);
@@ -111,23 +109,23 @@ async function init() {
 	meshes[i] = new THREE.Mesh(new THREE.SphereGeometry(0.23, 24, 24), smooth);
 	meshes[i].position.set(1, 0.5, 1);
 	meshes[i].mass = 2;
-	tempBody = bodies.push(meshes[i]);
+	bodies.push(meshes[i]);
 	
 	//7 Cylinder
 	i++
 	meshes[i] = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.4, 24), smooth);
 	meshes[i].position.set(0, 0.5, 0);
 	meshes[i].mass = 2;
-	tempBody = bodies.push(meshes[i]);
+	bodies.push(meshes[i]);
 	
 	//8 Cone
 	i++
 	meshes[i] = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.5, 24), smooth);
 	meshes[i].position.set(1, 0.5, -1);
 	meshes[i].mass = 2;
-	tempBody = bodies.push(meshes[i]);
+	bodies.push(meshes[i]);
 	
-	//10 Instanced boxes
+	//9 Instanced boxes
 	i++
 	meshes[i] = new THREE.InstancedMesh(new THREE.BoxGeometry(0.2, 0.2, 0.2), flat, 3);
 	meshes[i].mass = 2;
@@ -136,15 +134,15 @@ async function init() {
 		meshes[i].userData.pos[j] = new THREE.Vector3();
 		meshes[i].userData.pos[j].set(1, 0.5, 0);
 	}
-	tempBody = bodies.push(meshes[i]);
+	bodies.push(meshes[i]);
 	
-	//11 Convex hull shape (controled by central force)
+	//10 Convex hull shape (controled by central force)
 	i++
 	meshes[i] = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.3, 5), new THREE.MeshPhongMaterial({ color: 0xff0000 }));
 	meshes[i].geometry.name = 'hull';
 	meshes[i].position.set(0, 0.5, -1);
 	meshes[i].mass = 2;
-	tempBody = bodies.push(meshes[i]);
+	bodies.push(meshes[i]);
 	
 	//Physics setup
 	//-----------------------------------------------------------------------------------------------

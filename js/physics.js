@@ -132,8 +132,8 @@ async function AmmoPhysics() {
             }
 			
 			AmmoLib.destroy(vectA);
-            AmmoLib.destroy(vectB);
-            AmmoLib.destroy(vectC);
+			AmmoLib.destroy(vectB);
+			AmmoLib.destroy(vectC);
 
             shape.setMargin(0);
 
@@ -179,8 +179,8 @@ async function AmmoPhysics() {
             }
 			
 			AmmoLib.destroy(vectA);
-            AmmoLib.destroy(vectB);
-            AmmoLib.destroy(vectC);
+			AmmoLib.destroy(vectB);
+			AmmoLib.destroy(vectC);
 
 			//var shape = new AmmoLib.btBvhTriangleMeshShape(triangle_mesh, true);
 			
@@ -444,11 +444,11 @@ async function AmmoPhysics() {
 	function setForce (force) {
 		vectForce.setValue(force.x, force.y, force.z);
 	}
-
-    //-------------------------------------------------------------------
-    //Init contacts
-    //-------------------------------------------------------------------
-
+	
+	//-------------------------------------------------------------------
+	//Init contacts
+	//-------------------------------------------------------------------
+	
     let cbContactResult;
 
     function setupContact(bodyA, indexB, contact) {

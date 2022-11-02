@@ -13,7 +13,7 @@ async function AmmoPhysics() {
     const AmmoLib = await Ammo();
 
 	
-	//common function
+	//global variables
 	const transform = new AmmoLib.btTransform();
 	
 	const vectGravity = new AmmoLib.btVector3(0, -9.8, 0);

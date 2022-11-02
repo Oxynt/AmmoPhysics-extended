@@ -691,11 +691,11 @@ async function AmmoPhysics() {
 		body.applyCentralForce(vectForce);
 		
 		const motionState = body.getMotionState();
-        motionState.getWorldTransform(transform);
-        const position = transform.getOrigin();
-        mesh.position.set(position.x(), position.y(), position.z());
+		motionState.getWorldTransform(transform);
+		const position = transform.getOrigin();
+		mesh.position.set(position.x(), position.y(), position.z());
 		//const quaternion = transform.getRotation();
-        //mesh.quaternion.set(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+		//mesh.quaternion.set(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
 		
     }
 

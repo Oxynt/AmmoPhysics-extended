@@ -19,6 +19,7 @@ async function AmmoPhysics() {
 	const vectGravity = new AmmoLib.btVector3(0, -9.8, 0);
 	const vectVelocity = new AmmoLib.btVector3();
 	const vectAngular = new AmmoLib.btVector3();
+	const vectForce = new AmmoLib.btVector3(0,0,0);
 
     const frameRate = 60;
     const collisionConfiguration = new AmmoLib.btDefaultCollisionConfiguration();
@@ -188,9 +189,55 @@ async function AmmoPhysics() {
 			shape.setMargin(0);
 			
 			return shape
+			
+		} else if (geometry.name === 'terrain') {
 
+			// This parameter is not really used, since we are using PHY_FLOAT height data type and hence it is ignored
+			const heightScale = 1;
+			// Up axis = 0 for X, 1 for Y, 2 for Z. Normally 1 = Y is used.
+			const upAxis = 1;
+			// hdt, height data type. "PHY_FLOAT" is used. Possible values are "PHY_FLOAT", "PHY_UCHAR", "PHY_SHORT"
+			const hdt = "PHY_FLOAT";
+			// Set this to your needs (inverts the triangles)
+			const flipQuadEdges = false;
+			// Creates height data buffer in Ammo heap
+			let ammoHeightData = Ammo._malloc( 4 * geometry.segmentsX * geometry.segmentsZ );
+			// Copy the javascript height data array to the Ammo one.
+			let p = 0;
+			let p2 = 0;
+
+			for ( let j = 0; j < geometry.segmentsZ; j ++ ) {
+				for ( let i = 0; i < geometry.segmentsX; i ++ ) {
+
+					// write 32-bit float data to memory
+					Ammo.HEAPF32[ ammoHeightData + p2 >> 2 ] = geometry.heightData[ p ];
+					p ++;
+					// 4 bytes/float
+					p2 += 4;
+				}
+			}
+			
+			// Creates the heightfield physics shape
+			const shape = new Ammo.btHeightfieldTerrainShape(
+				geometry.segmentsX,
+				geometry.segmentsZ,
+				ammoHeightData,
+				heightScale,
+				geometry.terrainMinHeight,
+				geometry.terrainMaxHeight,
+				upAxis,
+				hdt,
+				flipQuadEdges
+			);
+
+			// Set scale
+			const scaleX = geometry.sizeX / ( geometry.segmentsX - 1 );
+			const scaleZ = geometry.sizeZ / ( geometry.segmentsZ - 1 );
+			shape.setLocalScaling( new Ammo.btVector3( scaleX, 1, scaleZ ) );
+			shape.setMargin( 0 );
+
+			return shape;
 		}
-
     }
 
     const meshes = [];
@@ -390,6 +437,13 @@ async function AmmoPhysics() {
         }
 
     }
+	
+	//-------------------------------------------------------------------
+    // set force
+    //-------------------------------------------------------------------
+	function setForce (force) {
+		vectForce.setValue(force.x, force.y, force.z);
+    }
 
     //-------------------------------------------------------------------
     //Init contacts
@@ -432,13 +486,10 @@ async function AmmoPhysics() {
             }
 
             if (index == indexB) {
-                let pos = {
-                    x: worldPos.x(),
-                    y: worldPos.y(),
-                    z: worldPos.z()
-                };
-                contact.copy(pos);
-            }
+             contact.set(worldPos.x(),worldPos.y(),worldPos.z());
+            } else {
+				contact.set(0,-1000,0);
+			}
         }
     }
 
@@ -459,15 +510,11 @@ async function AmmoPhysics() {
             if (distance > 0) {
 
                 let worldPos = contactPoint.get_m_positionWorldOnA();
-                let pos = {
-                    x: worldPos.x(),
-                    y: worldPos.y(),
-                    z: worldPos.z()
-                };
-                contact.copy(pos);
-                contact.c = 1;
+  
+                contact.set(worldPos.x(),worldPos.y(),worldPos.z());
+
             } else {
-                contact.c = 0;
+               	contact.set(0,-1000,0);
             }
         }
 
@@ -542,7 +589,7 @@ async function AmmoPhysics() {
                         worldPos = contactPoint.get_m_positionWorldOnA();
 
                         if (objB.index != meshIndex) {
-                            index = 'fail'; //no contact with target
+                           index = null; //no contact with target
                         }
 
                     } else if (objB.index != meshIndex) {
@@ -559,8 +606,7 @@ async function AmmoPhysics() {
                             y: worldPos.y(),
                             z: worldPos.z()
                         };
-                        markers[objA.index].position.copy(pos);
-                        markers[objA.index].visible = true;
+                        markers[index].position.copy(pos);
                     }
 
                 }
@@ -590,7 +636,7 @@ async function AmmoPhysics() {
 
         //		
 
-        for (let i = 0, l = meshes.length; i < l; i++) {
+        for (let i = 0, l = meshes.length-1; i < l; i++) {
 
             const mesh = meshes[i];
 
@@ -636,6 +682,21 @@ async function AmmoPhysics() {
                 }
             }
         }
+		
+		//force controlled mesh
+		const mesh = meshes[10];
+		const body = meshMap.get(mesh);
+		
+		//apply force
+		body.applyCentralForce(vectForce);
+		
+		const motionState = body.getMotionState();
+        motionState.getWorldTransform(transform);
+        const position = transform.getOrigin();
+        mesh.position.set(position.x(), position.y(), position.z());
+		//const quaternion = transform.getRotation();
+        //mesh.quaternion.set(quaternion.x(), quaternion.y(), quaternion.z(), quaternion.w());
+		
     }
 
     // animate
@@ -645,6 +706,7 @@ async function AmmoPhysics() {
         addMesh: addMesh,
         setMeshPosition: setMeshPosition,
         setMeshVelocity: setMeshVelocity,
+		setForce: setForce,
         getAllCollisions: getAllCollisions,
         getContact: getContact,
         getContactPair: getContactPair

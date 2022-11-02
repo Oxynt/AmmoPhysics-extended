@@ -9,8 +9,9 @@ Some changes have been made to use it as general purpose helper.
 -support positioning, velocity, rotational velocity\
 -custom/loaded meshes can be used with primitives\
 -create compound shapes when THREE.Group is used\
--three differents methods for contact points detection\
--auto convert undefined primitives to convex hull shapes
+-three differents contact points detection\
+-convex hull shapes conversion
+-central force demo added
 
 <br>
 LINKS AND REFERENCES:
